@@ -1,1 +1,70 @@
-LibraryManagementSystem
+#LibraryManagementSystem#
+#Library Management System Simple Project #
+
+class Library():
+    def __init__(self,list):
+        self.books_list =list
+        self.available_list =list[:]
+        self.books_lent ={} #key-book Valye:user_name
+
+    def display_available_books(self):
+        for book in self.available_list:
+            print(book)
+        
+    def display_all_books(self):
+        for book in self.books_list:
+            print(book)
+        
+    def lend_books(self, name, book):
+        if book not in self.books_list:
+            print("Incorrect book name..Please check book list..!")
+            return
+        if book in self.available_list:   
+            self.books_lent.update({book:name})
+            self.available_list.remove(book)
+            print("You can take you the book")
+        else:
+            print("The book already taken by :" + self.books_lent[book])
+        
+    def return_books(self,book):
+         del self.books_lent[book]
+         self.available_list.append(book)
+        
+        
+
+if __name__=="__main__":
+    lib =Library(["Harry Batter","lamb light","Indian Brave Warriors","Battle of URI","Histroy of Indian Army"])
+    print("Welcome to Library. Enter an Option")
+    
+    while True:
+         print("1. Display available books")
+         print("2. Borrow a Book")
+         print("3. Return a Book")
+         print("4. Display all Books")
+         print("5. Quit")
+        
+         user_choice = int(input())
+        
+         if user_choice==1:
+             lib.display_available_books()
+             
+         elif user_choice==2:
+             name=input("Enter user Name :")
+             book=input("Enter book Name :")
+             lib.lend_books(name,book)
+             
+         elif user_choice==3:
+             book=input("Enter the name of the book :")
+             print("Done")
+             lib.return_books(book)
+             
+         elif user_choice==4:
+             lib.display_all_books()
+             
+         elif user_choice==5:
+             print("Thankyou..Welcome Back..!")
+             break
+             
+         else:
+             print("Invalid choice...Enter Correct choice...!")
+             
