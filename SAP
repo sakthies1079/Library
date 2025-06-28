@@ -62,7 +62,7 @@ with mysql_conn.cursor() as cursor:
     mysql_conn.commit()
 
 #10. Show Success Message
-print(f"✅ {len(data)} rows inserted into MySQL table `{table_name}`.")
+print(f" {len(data)} rows inserted into MySQL table `{table_name}`.")
 
 #Clean up
 mysql_conn.close()
