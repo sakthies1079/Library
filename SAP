@@ -1,0 +1,70 @@
+# 1 Importing Required Libraries#
+
+from pyrfc import Connection      # For connecting to SAP using RFC (SAP GUI-based)
+                                  # pyrfc(is used to talk to SAP via RFC protocol)
+import pymysql                    # For connecting to MySQL
+                                  #(pymysql used to connect and insert data into a MySQL databas automatially)
+
+# 2 Define SAP Log in:
+sap_conn_params = {
+    'user': 'SAP_USERNAME',
+    'passwd': 'SAP_PASSWORD',
+    'ashost': 'SAP_HOST',         # e.g. '192.168.1.100' or 'sap.example.com'
+    'sysnr': '00',                # SAP System Number
+    'client': '100',              # Client number
+    'lang': 'EN'                  # Language
+
+}  #NOTE:Replace them with your actual SAP username, password, hostname/IP, system number, and client.
+
+#3 Define Sql Logins:
+mysql_conn = pymysql.connect(
+    host='localhost',
+    user='mysql_user',
+    password='mysql_password',
+    database='sap_data_db',        #You must make sure the database sap_data_db is already created in MySQL
+    charset='utf8mb4',
+    cursorclass=pymysql.cursors.DictCursor)
+
+#4 Choose the SAP Table
+SAP_TABLE = 'MARA'     #'MARA' is a sample SAP table — you can replace it with any table you want
+ROWCOUNT = 10          #ROWCOUNT controls how many rows to fetch (good for testing)
+
+#5 Connect to SAP
+sap_conn = Connection(**sap_conn_params)  #Establishes a connection to SAP using the credentials provided
+
+#6 Get SAP Table Field Info (Column Names)
+field_result = sap_conn.call('RFC_READ_TABLE', QUERY_TABLE=SAP_TABLE, ROWCOUNT=0)
+fields = field_result['FIELDS']
+column_names = [f['FIELDNAME'] for f in fields]
+
+#7. Dynamically Create the Same Table in MySQL
+table_name = SAP_TABLE.lower()
+columns_def = ', '.join([f"`{col}` TEXT" for col in column_names])
+create_sql = f"CREATE TABLE IF NOT EXISTS {table_name} ({columns_def})"
+
+with mysql_conn.cursor() as cursor:
+    cursor.execute(create_sql)
+    mysql_conn.commit()   #Executes the table creation query in MySQl
+
+ # 8. Fetch Actual Data from SAP Table
+
+result = sap_conn.call('RFC_READ_TABLE', QUERY_TABLE=SAP_TABLE, ROWCOUNT=ROWCOUNT)
+data = result['DATA']    #Now it fetches actual table data — limited to ROWCOUNT rows.
+
+#9. Insert Data into MySQL
+with mysql_conn.cursor() as cursor:
+    for row in data:
+        line = row['WA']
+        values = [line[i:i+field['LENGTH']].strip() for i, field in zip(range(0, len(line), 18), fields)]
+        placeholders = ', '.join(['%s'] * len(values))
+        insert_sql = f"INSERT INTO {table_name} ({', '.join(column_names)}) VALUES ({placeholders})"
+        cursor.execute(insert_sql, values)
+    mysql_conn.commit()
+
+#10. Show Success Message
+print(f"✅ {len(data)} rows inserted into MySQL table `{table_name}`.")
+
+#Clean up
+mysql_conn.close()
+sap_conn.close()
+
